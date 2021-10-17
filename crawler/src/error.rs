@@ -10,6 +10,8 @@ pub enum Error {
 
 #[derive(thiserror::Error, Debug)]
 pub enum FetchError {
+    #[error(transparent)]
+    HTTPError(#[from] reqwest::Error),
     #[error("not found")]
     NotFound,
 }

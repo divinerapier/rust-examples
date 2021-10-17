@@ -1,6 +1,7 @@
 use std::{
     collections::HashSet,
     sync::mpsc::{channel, Receiver, SendError, Sender},
+    sync::{Arc, Mutex},
 };
 
 mod error;
@@ -28,11 +29,13 @@ pub trait Crawler {
     ) -> Result<Receiver<Result<String>>, Error>
     where
         U: Into<String>,
-        F: Fetcher + Send + 'static,
-        E: Extractor + Send + 'static;
+        F: Fetcher + Clone + Send + 'static,
+        E: Extractor + Clone + Send + 'static;
 }
 
-pub struct MultiThreadsCrawler;
+pub struct MultiThreadsCrawler {
+    fetch_threadiness: usize,
+}
 
 impl Crawler for MultiThreadsCrawler {
     fn crawl<U, F, E>(
@@ -43,8 +46,8 @@ impl Crawler for MultiThreadsCrawler {
     ) -> Result<Receiver<Result<String>>>
     where
         U: Into<String>,
-        F: Fetcher + Send + 'static,
-        E: Extractor + Send + 'static,
+        F: Fetcher + Clone + Send + 'static,
+        E: Extractor + Clone + Send + 'static,
     {
         let entrance = entrance.into();
         let (tx_url, rx_doc) = self.start_fetch_threads(fetcher, entrance.clone()).unwrap();
@@ -58,21 +61,38 @@ type FetchResult = (Sender<String>, Receiver<(String, Result<String, Error>)>);
 pub type MultiThreadsCrawlerFetchResult = Result<FetchResult, SendError<String>>;
 
 impl MultiThreadsCrawler {
+    pub fn new(fetch_threadiness: usize) -> Self {
+        Self { fetch_threadiness }
+    }
+
     fn start_fetch_threads<F>(&self, fetcher: F, entrence: String) -> MultiThreadsCrawlerFetchResult
     where
-        F: Fetcher + Send + 'static,
+        F: Fetcher + Send + Clone + 'static,
     {
         let (tx_url, rx_url) = channel();
+        let rx_url = Arc::new(Mutex::new(rx_url));
         let (tx_doc, rx_doc) = channel();
         tx_url.send(entrence)?;
-        std::thread::spawn(move || {
-            while let Ok(url) = rx_url.recv() {
-                if let Err(e) = tx_doc.send((url.clone(), fetcher.fetch(url).map_err(Error::Fetch)))
-                {
-                    println!("[FETCHER] {}", e);
-                    return;
+        (0..self.fetch_threadiness).for_each(|_| {
+            let tx_doc = tx_doc.clone();
+            let rx_url = rx_url.clone();
+            let fetcher = fetcher.clone();
+            std::thread::spawn(move || loop {
+                match { rx_url.lock().unwrap().recv() } {
+                    Err(e) => {
+                        println!("[FETCHER] failed to receive url. {:?}", e);
+                        return;
+                    }
+                    Ok(url) => {
+                        if let Err(e) =
+                            tx_doc.send((url.clone(), fetcher.fetch(url).map_err(Error::Fetch)))
+                        {
+                            println!("[FETCHER] {}", e);
+                            return;
+                        }
+                    }
                 }
-            }
+            });
         });
         Ok((tx_url, rx_doc))
     }
@@ -136,6 +156,7 @@ impl MultiThreadsCrawler {
                     }
                 }
                 if inflight == 0 {
+                    println!("all done!");
                     return;
                 }
             }
@@ -149,7 +170,10 @@ impl MultiThreadsCrawler {
 mod test {
     use crate::Crawler;
 
+    #[derive(Clone)]
     struct Extractor {}
+
+    #[derive(Clone)]
     struct Fetcher {}
 
     impl super::Fetcher for Fetcher {
@@ -187,7 +211,7 @@ mod test {
 
     #[test]
     fn test() {
-        let crawler = super::MultiThreadsCrawler;
+        let crawler = super::MultiThreadsCrawler::new(4);
         let urls = crawler
             .crawl("home-page", Fetcher {}, Extractor {})
             .unwrap();
