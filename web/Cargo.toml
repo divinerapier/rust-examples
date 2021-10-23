@@ -1,0 +1,15 @@
+[package]
+name = "rusty-rocket"
+version = "0.1.0"
+authors = ["rainer"]
+edition = "2018"
+
+[dependencies]
+# Rocket 0.5 runs with stable, nightly is no longer necessary
+rocket = { version = "0.5.0-rc.1", features = [ "json" ] }
+base64 = "0.13"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+reqwest = { version = "0.11", features = ["json", "rustls-tls"] }
+chrono = { version = "0.4", features = ["serde"] }
+mongodb = "2.0.1"
