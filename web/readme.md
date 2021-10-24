@@ -6,9 +6,9 @@
 
 This repository contains a sample that I used to do an introduction talk about *Building Web APIs with Rust and Rocket* at the [Rust Linz](https://rust-linz.at) meetup.
 
-# Storyboard
+## Storyboard
 
-## Prepare Environment
+### Prepare Environment
 
 ```sh
 cargo new rusty-rocket-live
@@ -16,14 +16,14 @@ code .
 cp -R ../rusty-rocket/.vscode ./.vscode
 ```
 
-## Dependencies
+### Dependencies
 
 * Open *Cargo.toml*
 * Snippet *010-rocket-dependency* in `[dependencies]`
 * Snippet *015-rocket-git*
 * `cargo build`
 
-## Basics
+### Basics
 
 * Open *main.rs*
 * Snippet *020-use*, fold region
@@ -35,14 +35,14 @@ cp -R ../rusty-rocket/requests.http .
 
 * Demo request
 
-## Tests
+### Tests
 
 * Create *src/tests.rs*
 * Snippet *040-basic-test* in *tests.rs*
 * Snippet *035-annotate-test-module* in *main.rs*
 * `cargo test`
 
-## Dynamic Paths
+### Dynamic Paths
 
 * Snippet *045-dynamic-path* in *main.rs*
 * Add `greeting` to mounts
@@ -50,7 +50,7 @@ cp -R ../rusty-rocket/requests.http .
 * Snippet *050-dynamic-path-test* in *test.rs*
 * `cargo test`
 
-## Querystring Parameters
+### Querystring Parameters
 
 * Snippet *055-query-string-params* in *main.rs*
 * Add `query_greeting` to mounts
@@ -58,7 +58,7 @@ cp -R ../rusty-rocket/requests.http .
 * Snippet *060-query-string-tests* in *test.rs*
 * `cargo test`
 
-## Request Guards
+### Request Guards
 
 * Create *src/api_key.rs*
 * Snippet *065-custom-request-guard* in *api-key.rs*
@@ -68,7 +68,7 @@ cp -R ../rusty-rocket/requests.http .
 * Snippet *075-tests-guarded-route* in *test.rs*
 * `cargo test`
 
-## Cookie Guards
+### Cookie Guards
 
 * Snippet *080-cookie-guard* in *main.rs*
 * Add `login` and `session` to mounts
@@ -76,7 +76,7 @@ cp -R ../rusty-rocket/requests.http .
 * Snippet *085-cookie-test* in *test.rs*
 * `cargo test`
 
-## Simple REST API
+### Simple REST API
 
 * Snippet *090-hero-api-region*
 * Inside:
@@ -90,13 +90,13 @@ cp -R ../rusty-rocket/requests.http .
 * At the end: Snippet *111-add-managed-hashmap*
 * Demo request
 
-## Catcher
+### Catcher
 
 * Snippet *125-404-catcher*
 * Snippet *126-register-catcher*
 * Demo request
 
-## Fairings
+### Fairings
 
 * Snippet *130-log-fairing*
 * Snippet *135-attach-fairing*

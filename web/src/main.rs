@@ -20,8 +20,13 @@ use std::sync::RwLock;
 use std::{collections::HashMap, sync::Arc};
 // endregion
 
+#[macro_use]
+extern crate diesel;
+
 #[cfg(test)]
 mod tests;
+
+mod schema;
 
 // region Basic GET Request
 // We can return basic data types like numbers, strings, Option, Result
