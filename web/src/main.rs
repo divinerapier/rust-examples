@@ -1,7 +1,7 @@
 // region use
 #![cfg_attr(debug_assertions, allow(dead_code, unused_imports))]
+use diesel::RunQueryDsl;
 use mongodb::{options::ClientOptions, Client};
-use reqwest;
 use rocket::{
     catch, catchers,
     fairing::{self, Fairing, Info, Kind},
@@ -23,10 +23,16 @@ use std::{collections::HashMap, sync::Arc};
 #[macro_use]
 extern crate diesel;
 
+use rocket_sync_db_pools::database;
+
 #[cfg(test)]
 mod tests;
 
+mod models;
 mod schema;
+
+#[database("posts")]
+struct PostsDbConn(diesel::MysqlConnection);
 
 // region Basic GET Request
 // We can return basic data types like numbers, strings, Option, Result
@@ -225,6 +231,61 @@ impl Fairing for Counter {
 }
 // endregion
 
+#[get("/<id>")]
+async fn get_post_by_id(pool: PostsDbConn, id: i32) {
+    // posts::id.eq(0)
+    use diesel::ExpressionMethods;
+
+    // load
+    use diesel::QueryDsl;
+    use schema::posts;
+
+    let post: Vec<models::Post> = pool
+        .run(move |conn| posts::table.filter(posts::id.eq(id)).load(conn))
+        .await
+        .unwrap();
+}
+
+#[get("/?<limit>&<last_id>")]
+async fn list_posts(pool: PostsDbConn, limit: i64, last_id: Option<i32>) {
+    // posts::id.eq(0)
+    use diesel::ExpressionMethods;
+
+    // load
+    use diesel::QueryDsl;
+    use schema::posts;
+
+    let post: Vec<models::Post> = pool
+        .run(move |conn| {
+            posts::table
+                .filter(posts::id.gt(last_id.unwrap_or_default()))
+                .limit(limit)
+                .load(conn)
+        })
+        .await
+        .unwrap();
+}
+
+// format: 接收 JSON 格式输入
+// data:   <> 中的字符串表示分序列之后的变量
+#[post("/", format = "json", data = "<body>")]
+async fn create_post(pool: PostsDbConn, body: Json<models::CreatePost>) {
+    // 调用 execute 函数
+    use diesel::RunQueryDsl;
+
+    let crate_post = body.clone();
+
+    pool.run(move |conn| {
+        diesel::insert_into(schema::posts::table)
+            .values(crate_post)
+            // 或者如下，这里要求传入 Insertable<T>
+            // .values(&*body)
+            .execute(conn)
+    })
+    .await
+    .unwrap();
+}
+
 // Will generate (async) main function for us
 #[launch]
 async fn rocket() -> _ {
@@ -253,6 +314,7 @@ async fn rocket() -> _ {
                 get_all,
             ],
         )
+        .mount("/posts", routes![list_posts, get_post_by_id, create_post])
         // Add managed state. Here we use global state. Request-local state
         // would also be possible.
         //    (see https://rocket.rs/v0.4/guide/state/)
@@ -263,4 +325,5 @@ async fn rocket() -> _ {
         //    (see https://rocket.rs/v0.4/guide/requests/#error-catchers)
         .register("/", catchers![not_found])
         .attach(Counter::default())
+        .attach(PostsDbConn::fairing())
 }

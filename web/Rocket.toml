@@ -1,0 +1,2 @@
+[global.databases]
+posts = { url = "mysql://root:rocket@127.0.0.1/rocket" }
