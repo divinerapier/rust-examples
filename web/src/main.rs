@@ -248,19 +248,32 @@ async fn get_post_by_id(pool: PostsDbConn, id: i32) {
 
 #[get("/?<limit>&<last_id>")]
 async fn list_posts(pool: PostsDbConn, limit: i64, last_id: Option<i32>) {
-    // posts::id.eq(0)
+    // posts::id.gt
+    // id.gt
     use diesel::ExpressionMethods;
 
     // load
     use diesel::QueryDsl;
-    use schema::posts;
 
-    let post: Vec<models::Post> = pool
+    // use schema::posts;
+    // let post: Vec<models::Post> = pool
+    //     .run(move |conn| {
+    //         posts::table
+    //             .filter(posts::id.gt(last_id.unwrap_or_default()))
+    //             .limit(limit)
+    //             .load(conn)
+    //     })
+    //     .await
+    //     .unwrap();
+
+    use schema::posts::dsl::*;
+
+    let post = pool
         .run(move |conn| {
-            posts::table
-                .filter(posts::id.gt(last_id.unwrap_or_default()))
+            posts
+                .filter(id.gt(last_id.unwrap_or_default()))
                 .limit(limit)
-                .load(conn)
+                .load::<models::Post>(conn)
         })
         .await
         .unwrap();
