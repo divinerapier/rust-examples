@@ -1,7 +1,6 @@
 [package]
-name = "rusty-rocket"
+name = "rocket-example"
 version = "0.1.0"
-authors = ["rainer"]
 edition = "2018"
 
 [dependencies]

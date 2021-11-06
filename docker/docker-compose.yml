@@ -7,7 +7,7 @@ services:
     command: --default-authentication-plugin=mysql_native_password
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: rocket
-      MYSQL_DATABASE: rocket
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: testing
     ports:
       - 3306:3306

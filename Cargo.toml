@@ -1,5 +1,6 @@
 [workspace]
 members = [
+    "axum-example",
     "crawler",
-    "web"
+    "rocket-example"
 ]
