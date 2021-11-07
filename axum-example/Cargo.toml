@@ -18,6 +18,7 @@ sea-query = "0.12.8"
 sqlx = { version = "0.5", features = [ "runtime-tokio-native-tls", "mysql", "chrono"] }
 chrono = "0.4.19"
 rs-snowflake = "0.5.0"
+futures = "0.3"
 
 [dev-dependencies]
 tower = { version = "0.4", features = ["util"] }

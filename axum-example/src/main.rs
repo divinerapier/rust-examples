@@ -1,20 +1,20 @@
-//! Run with
-//!
-//! ```not_rust
-//! cargo test -p example-testing
-//! ```
+#![feature(thread_id_value)]
 
-use std::{sync::Arc, time::Duration};
+use std::{fmt::Debug, sync::Arc, time::Duration};
 
 use axum::{
+    body::Bytes,
     extract::{Extension, Path},
     routing::{get, post},
-    AddExtension, AddExtensionLayer, Json, Router,
+    AddExtension, AddExtensionLayer, Error, Json, Router,
 };
 use chrono::Local;
+use hyper::{Response, StatusCode};
 use tower_http::trace::TraceLayer;
 
 mod algorithm;
+mod error;
+mod response;
 
 #[derive(Clone, Debug)]
 pub struct User {
@@ -177,13 +177,12 @@ mod tests {
         let app = app().await;
 
         let req = super::algorithm::CreateAlgorithmRequest {
-            id: 10,
-            name: "alg-0000001".to_string(),
+            name: "alg-0000002".to_string(),
             location: "/aaaaa/bbbbbb/ccccc/ddddd".to_string(),
             image: 1000,
         };
 
-        let body = serde_json::to_string(&req).unwrap();
+        let req_body = serde_json::to_string(&req).unwrap();
 
         let response = app
             .oneshot(
@@ -191,20 +190,52 @@ mod tests {
                     .uri("/algorithms")
                     .header(http::header::CONTENT_TYPE, "application/json")
                     .method(Method::POST)
-                    .body(body.into())
+                    .body(req_body.clone().into())
                     .unwrap(),
             )
             .await
             .unwrap();
 
-        let status = response.status();
-        let body = hyper::body::to_bytes(response.into_body()).await.unwrap();
-        println!("status code: {}", status);
-        println!(
-            "body: {}",
-            String::from_utf8(body.into_iter().collect()).unwrap()
-        );
+        let (status, body) = read_response::<algorithm::CreateAlgorithmResponse>(response).await;
+
+        match body {
+            Ok(body) => {
+                if body.code.eq("000000") {
+                    println!("create algorithm success. id: {:?}", body.data);
+                } else {
+                    println!("code: {} message: {:?}", body.code, body.message);
+                }
+            }
+            Err(e) => {
+                println!("read response with error: {}", e);
+            }
+        }
+
+        // let status = response.status();
+        // let body = hyper::body::to_bytes(response.into_body()).await.unwrap();
+        // println!("status code: {}", status);
+        // println!(
+        //     "body: {}",
+        //     String::from_utf8(body.into_iter().collect()).unwrap()
+        // );
 
         assert_eq!(status, StatusCode::OK);
     }
+}
+
+async fn read_response<R>(
+    resp: Response<axum::body::BoxBody>,
+) -> (StatusCode, Result<response::Response<R>, serde_json::Error>)
+where
+    R: serde::de::DeserializeOwned,
+{
+    let status = resp.status();
+
+    let body = hyper::body::to_bytes(resp.into_body()).await.unwrap();
+    let body = body.as_ref();
+
+    (
+        status,
+        serde_json::from_slice::<response::Response<R>>(body),
+    )
 }
