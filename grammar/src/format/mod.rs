@@ -25,6 +25,5 @@ mod test {
             name: String::from("Tom"),
         };
         println!("{}", u);
-        assert_eq!(1, 2);
     }
 }

@@ -42,7 +42,7 @@ where
 
 impl<I> EvenIndexSelectedExtension for I where I: Iterator + Sized {}
 
-pub trait EvenIndexSelectedExtension {
+pub trait EvenIndexSelectedExtension: Sized {
     fn into_even_index_selected_iterator(self) -> EvenIndexSelectedIterator<Self>
     where
         Self: Sized,
@@ -56,7 +56,7 @@ mod test {
     use super::*;
 
     #[test]
-    fn test() {
+    fn test1() {
         let fibo = Fibonacci::default().into_even_index_selected_iterator();
         let mut count = 0;
         for i in fibo {
@@ -65,6 +65,14 @@ mod test {
             if count >= 100 {
                 break;
             }
+        }
+    }
+
+    #[test]
+    fn test2() {
+        let iter = (0..100).into_even_index_selected_iterator();
+        for i in iter {
+            println!("{}", i);
         }
     }
 }

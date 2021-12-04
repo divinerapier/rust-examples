@@ -6,7 +6,7 @@
       <sourceFolder url="file://$MODULE_DIR$/crawler/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/rocket-example/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/codewars/src" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/grammer/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/grammar/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />

@@ -3,6 +3,6 @@ members = [
     "axum-example",
     "codewars",
     "crawler",
-    "grammer",
+    "grammar",
     "rocket-example"
 ]
