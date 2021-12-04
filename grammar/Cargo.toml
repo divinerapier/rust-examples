@@ -6,3 +6,19 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+
+[[bin]]
+name = "clouser"
+path = "closure/main.rs"
+
+[[bin]]
+name = "clouser2"
+path = "closure/main2.rs"
+
+[[bin]]
+name = "clouser3"
+path = "closure/main3.rs"
+
+[[bin]]
+name = "clouser4"
+path = "closure/main4.rs"
