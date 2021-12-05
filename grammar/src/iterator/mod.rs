@@ -1,3 +1,6 @@
+mod from_iterator;
+mod iter;
+
 pub struct Fibonacci {
     current: u64,
     next: u64,
