@@ -1,4 +1,4 @@
-use futures::future::join3;
+use futures::future::{join3, maybe_done, MaybeDone};
 use futures::{join, pin_mut};
 use std::future::Future;
 use std::os::unix::fs::FileExt;
@@ -6,57 +6,50 @@ use std::pin::Pin;
 use std::task::{ready, Context, Poll};
 
 #[pin_project::pin_project]
-pub struct Join2<F1, O1, F2, O2>
+pub struct Join2<F1, F2>
 where
-    F1: Future<Output = O1>,
-    F2: Future<Output = O2>,
+    F1: Future,
+    F2: Future,
 {
     #[pin]
-    fu1: F1,
-
+    fu1: MaybeDone<F1>,
     #[pin]
-    fu2: F2,
-
-    r1: Option<O1>,
-    r2: Option<O2>,
+    fu2: MaybeDone<F2>,
 }
 
 // impl <F1, O1, F2, O2>  !Unpin for Join2<F1, O1, F2, O2>;
 
-impl<F1, O1, F2, O2> Join2<F1, O1, F2, O2>
+impl<F1, F2> Join2<F1, F2>
 where
-    F1: Future<Output = O1>,
-    F2: Future<Output = O2>,
+    F1: Future,
+    F2: Future,
 {
-    pub fn new(fu1: F1, fu2: F2) -> Join2<F1, O1, F2, O2> {
+    pub fn new(fu1: F1, fu2: F2) -> Join2<F1, F2> {
         Self {
-            fu1,
-            fu2,
-            r1: None,
-            r2: None,
+            fu1: maybe_done(fu1),
+            fu2: maybe_done(fu2),
         }
     }
 }
 
-impl<F1, O1, F2, O2> Future for Join2<F1, O1, F2, O2>
+impl<F1, F2> Future for Join2<F1, F2>
 where
-    F1: Future<Output = O1> + Unpin,
-    F2: Future<Output = O2> + Unpin,
+    F1: Future,
+    F2: Future,
 {
-    type Output = (O1, O2);
+    type Output = (F1::Output, F2::Output);
 
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        let me = self.project();
-        if me.r1.as_ref().is_none() {
-            let r1 = ready!(me.fu1.poll(cx));
-            *me.r1 = Some(r1);
-        }
-        if me.r2.as_ref().is_none() {
-            let r2 = ready!(me.fu2.poll(cx));
-            *me.r2 = Some(r2);
-        }
+        let mut me = self.project();
+        let mut all_ready = true;
+        all_ready &= me.fu1.as_mut().poll(cx).is_ready();
+        all_ready &= me.fu2.as_mut().poll(cx).is_ready();
 
-        Poll::Ready((me.r1.take().unwrap(), me.r2.take().unwrap()))
+        if all_ready {
+            Poll::Ready((me.fu1.take_output().unwrap(), me.fu2.take_output().unwrap()))
+        } else {
+            Poll::Pending
+        }
     }
 }
 
@@ -74,7 +67,8 @@ mod test {
         let f1 = async { 1 };
         let f2 = async { 2 };
         // let f = join2(f);
-        let f = join(f1, f2);
+        // let f = join(f1, f2);
+        let f = Join2::new(f1, f2);
         assert_eq!(block_on(f), (1, 2));
     }
 }
