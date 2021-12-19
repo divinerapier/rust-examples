@@ -11,3 +11,9 @@ services:
       MYSQL_DATABASE: testing
     ports:
       - 3306:3306
+
+  redis:
+    image: "redis:alpine"
+    command: redis-server
+    ports:
+      - "6379:6379"
